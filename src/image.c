@@ -1138,11 +1138,11 @@ void save_image_jpg(image p, const char *name)
 }
 #endif
 
-void save_image_png(image im, const char *name)
+void save_image_bmp(image im, const char *name)
 {
     char buff[256];
     //sprintf(buff, "%s (%d)", name, windows);
-    sprintf(buff, "%s.png", name);
+    sprintf(buff, "%s.bmp", name);
     unsigned char *data = calloc(im.w*im.h*im.c, sizeof(char));
     int i,k;
     for(k = 0; k < im.c; ++k){
@@ -1150,7 +1150,7 @@ void save_image_png(image im, const char *name)
             data[i*im.c+k] = (unsigned char) (255*im.data[i + k*im.w*im.h]);
         }
     }
-    int success = stbi_write_png(buff, im.w, im.h, im.c, data, im.w*im.c);
+    int success = stbi_write_bmp(buff, im.w, im.h, im.c, data);
     free(data);
     if(!success) fprintf(stderr, "Failed to write image %s\n", buff);
 }
@@ -1160,7 +1160,7 @@ void save_image(image im, const char *name)
 #ifdef OPENCV
     save_image_jpg(im, name);
 #else
-    save_image_png(im, name);
+    save_image_bmp(im, name);
 #endif
 }
 

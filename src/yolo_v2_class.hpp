@@ -38,6 +38,7 @@ struct bbox_t_container {
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <stdexcept>
 
 #ifdef OPENCV
 #include <opencv2/opencv.hpp>            // C++
@@ -57,7 +58,7 @@ class Detector {
     std::deque<std::vector<bbox_t>> prev_bbox_vec_deque;
     const int cur_gpu_id;
 public:
-    float nms = .4;
+    float nms;
     bool wait_stream;
 
     YOLODLL_API Detector(std::string cfg_filename, std::string weight_filename, int gpu_id = 0);
@@ -80,7 +81,8 @@ public:
             throw std::runtime_error("Image is empty");
         auto detection_boxes = detect(img, thresh, use_mean);
         float wk = (float)init_w / img.w, hk = (float)init_h / img.h;
-        for (auto &i : detection_boxes) i.x *= wk, i.w *= wk, i.y *= hk, i.h *= hk;
+        for (std::vector<bbox_t>::size_type i = 0; i != detection_boxes.size(); ++i) detection_boxes[i].x *= wk, detection_boxes[i].w *= wk, detection_boxes[i].y *= hk, detection_boxes[i].h *= hk;
+        //for (auto &i : detection_boxes) i.x *= wk, i.w *= wk, i.y *= hk, i.h *= hk;
         return detection_boxes;
     }
 

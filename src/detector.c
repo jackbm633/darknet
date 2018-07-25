@@ -1137,12 +1137,11 @@ void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filenam
         //draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
         int nboxes = 0;
         detection *dets = get_network_boxes(&net, im.w, im.h, thresh, hier_thresh, 0, 1, &nboxes, letterbox);
+	printf("%d\n", nboxes);
         if (nms) do_nms_sort(dets, nboxes, l.classes, nms);
         draw_detections_v3(im, dets, nboxes, thresh, names, alphabet, l.classes, ext_output);
-        save_image(im, "predictions");
-        if (!dont_show) {
-            show_image(im, "predictions");
-        }
+        save_image_bmp(im, "predictions.bmp");
+	printf("Saved image");
 
         // pseudo labeling concept - fast.ai
         if(save_labels)

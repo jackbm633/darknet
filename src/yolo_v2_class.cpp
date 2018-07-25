@@ -103,7 +103,7 @@ struct detector_gpu_t {
 YOLODLL_API Detector::Detector(std::string cfg_filename, std::string weight_filename, int gpu_id) : cur_gpu_id(gpu_id)
 {
     wait_stream = 0;
-    int old_gpu_index;
+    //int old_gpu_index;
 #ifdef GPU
     check_cuda( cudaGetDevice(&old_gpu_index) );
 #endif
@@ -150,7 +150,7 @@ YOLODLL_API Detector::Detector(std::string cfg_filename, std::string weight_file
 YOLODLL_API Detector::~Detector() 
 {
     detector_gpu_t &detector_gpu = *static_cast<detector_gpu_t *>(detector_gpu_ptr.get());
-    layer l = detector_gpu.net.layers[detector_gpu.net.n - 1];
+    //layer l = detector_gpu.net.layers[detector_gpu.net.n - 1];
 
     free(detector_gpu.track_id);
 
@@ -158,7 +158,7 @@ YOLODLL_API Detector::~Detector()
     for (int j = 0; j < FRAMES; ++j) free(detector_gpu.predictions[j]);
     for (int j = 0; j < FRAMES; ++j) if(detector_gpu.images[j].data) free(detector_gpu.images[j].data);
 
-    int old_gpu_index;
+    //int old_gpu_index;
 #ifdef GPU
     cudaGetDevice(&old_gpu_index);
     cuda_set_device(detector_gpu.net.gpu_index);
@@ -240,7 +240,7 @@ YOLODLL_API std::vector<bbox_t> Detector::detect(image_t img, float thresh, bool
 {
     detector_gpu_t &detector_gpu = *static_cast<detector_gpu_t *>(detector_gpu_ptr.get());
     network &net = detector_gpu.net;
-    int old_gpu_index;
+    //int old_gpu_index;
 #ifdef GPU
     cudaGetDevice(&old_gpu_index);
     if(cur_gpu_id != old_gpu_index)
@@ -328,8 +328,9 @@ YOLODLL_API std::vector<bbox_t> Detector::tracking_id(std::vector<bbox_t> cur_bb
     detector_gpu_t &det_gpu = *static_cast<detector_gpu_t *>(detector_gpu_ptr.get());
 
     bool prev_track_id_present = false;
-    for (auto &i : prev_bbox_vec_deque)
-        if (i.size() > 0) prev_track_id_present = true;
+    for (std::deque<std::vector<bbox_t>>::iterator i = prev_bbox_vec_deque.begin(); i != prev_bbox_vec_deque.end(); ++i)
+    //for (auto &i : prev_bbox_vec_deque)
+        if ((*i).size() > 0) prev_track_id_present = true;
 
     if (!prev_track_id_present) {
         for (size_t i = 0; i < cur_bbox_vec.size(); ++i)
@@ -340,15 +341,16 @@ YOLODLL_API std::vector<bbox_t> Detector::tracking_id(std::vector<bbox_t> cur_bb
     }
 
     std::vector<unsigned int> dist_vec(cur_bbox_vec.size(), std::numeric_limits<unsigned int>::max());
-
-    for (auto &prev_bbox_vec : prev_bbox_vec_deque) {
-        for (auto &i : prev_bbox_vec) {
+    for (std::deque<std::vector<bbox_t>>::iterator prev_bbox_vec = prev_bbox_vec_deque.begin(); prev_bbox_vec != prev_bbox_vec_deque.end(); ++prev_bbox_vec){
+    //for (auto &prev_bbox_vec : prev_bbox_vec_deque) {
+        //for (auto &i : (*prev_bbox_vec)) {
+        for(std::vector<bbox_t>::iterator i = (*prev_bbox_vec).begin(); i != (*prev_bbox_vec).end(); ++i){
             int cur_index = -1;
             for (size_t m = 0; m < cur_bbox_vec.size(); ++m) {
                 bbox_t const& k = cur_bbox_vec[m];
-                if (i.obj_id == k.obj_id) {
-                    float center_x_diff = (float)(i.x + i.w/2) - (float)(k.x + k.w/2);
-                    float center_y_diff = (float)(i.y + i.h/2) - (float)(k.y + k.h/2);
+                if ((*i).obj_id == k.obj_id) {
+                    float center_x_diff = (float)((*i).x + (*i).w/2) - (float)(k.x + k.w/2);
+                    float center_y_diff = (float)((*i).y + (*i).h/2) - (float)(k.y + k.h/2);
                     unsigned int cur_dist = sqrt(center_x_diff*center_x_diff + center_y_diff*center_y_diff);
                     if (cur_dist < max_dist && (k.track_id == 0 || dist_vec[m] > cur_dist)) {
                         dist_vec[m] = cur_dist;
@@ -357,13 +359,13 @@ YOLODLL_API std::vector<bbox_t> Detector::tracking_id(std::vector<bbox_t> cur_bb
                 }
             }
 
-            bool track_id_absent = !std::any_of(cur_bbox_vec.begin(), cur_bbox_vec.end(), 
-                [&i](bbox_t const& b) { return b.track_id == i.track_id && b.obj_id == i.obj_id; });
+            bool track_id_absent = !std::any_of((cur_bbox_vec).begin(), (cur_bbox_vec).end(), 
+                [&i](bbox_t const& b) { return b.track_id == (*i).track_id && b.obj_id == (*i).obj_id; });
 
             if (cur_index >= 0 && track_id_absent){
-                cur_bbox_vec[cur_index].track_id = i.track_id;
-                cur_bbox_vec[cur_index].w = (cur_bbox_vec[cur_index].w + i.w) / 2;
-                cur_bbox_vec[cur_index].h = (cur_bbox_vec[cur_index].h + i.h) / 2;
+                (cur_bbox_vec)[cur_index].track_id = (*i).track_id;
+                ((cur_bbox_vec)[cur_index]).w = ((cur_bbox_vec)[cur_index].w + (*i).w) / 2;
+                (cur_bbox_vec)[cur_index].h = ((cur_bbox_vec)[cur_index].h + (*i).h) / 2;
             }
         }
     }
